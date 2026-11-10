@@ -1,36 +1,33 @@
 """
 Experimento 2: Conv1D + MLP con cabeza ordinal CORAL.
 
-Este archivo contiene esqueletos que el alumno debe completar.
-El tronco Conv1D + MLP (Conv1DBackbone) ya esta implementado y es el mismo
-del experimento Softmax: solo cambia la cabeza de salida.
+El tronco Conv1D + MLP (Conv1DBackbone) es el mismo del experimento Softmax:
+solo cambia la cabeza de salida.
 """
 
 from __future__ import annotations
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
+# Adam mueve cada parametro cerca de lr por paso. Con lr = 0.001 y unos 560
+# pasos, los sesgos no alcanzan a separarse. La escala acelera su aprendizaje.
+BIAS_SCALE = 10.0
 
 from src.models.blocks import Conv1DBackbone
 
 
 class CoralLayer(nn.Module):
     """
-    TODO(alumno):
     Capa de salida CORAL.
 
-    Debe producir K-1 logits acumulativos a partir de un vector de
-    caracteristicas de tamano input_size.
-
-    Pistas:
-    - un peso lineal compartido hacia un unico puntaje latente s = w^T h
-      (sin sesgo),
-    - K-1 sesgos ordenados b_0 >= b_1 >= ... >= b_{K-2},
-    - las diferencias entre sesgos pueden construirse con softplus y cumsum
-      para forzar el orden,
+    - puntaje latente compartido s = w^T h (sin sesgo),
+    - sesgos ordenados b_0 >= b_1 >= ... >= b_{K-2}; softplus > 0 fuerza el orden,
     - logits z_k = s + b_k.
 
-    Formas esperadas:
+    Con K = 2 hay un solo umbral y self.bias_gaps queda vacio (largo 0).
+
+    Formas:
     - x: (batch_size, input_size)
     - salida: (batch_size, num_classes - 1)
     """
@@ -39,26 +36,25 @@ class CoralLayer(nn.Module):
         super().__init__()
         self.input_size = input_size
         self.num_classes = num_classes
-        # TODO(alumno): definir la proyeccion compartida y los parametros
-        # de los sesgos ordenados.
+        self.score = nn.Linear(input_size, 1, bias=False)
+        self.first_bias = nn.Parameter(torch.zeros(1))
+        self.bias_gaps = nn.Parameter(torch.zeros(num_classes - 2))
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError(
-            "TODO(alumno): implementar CoralLayer.forward() en src/models/coral.py."
-        )
+        first_bias = BIAS_SCALE * self.first_bias
+        decrements = torch.cumsum(F.softplus(BIAS_SCALE * self.bias_gaps), dim=0)
+        biases = torch.cat([first_bias, first_bias - decrements])
+        return self.score(inputs) + biases  # (B, 1) + (K-1,) -> (B, K-1)
 
 
 class Conv1DCoralNet(nn.Module):
     """
-    TODO(alumno):
     Conv1D + MLP con cabeza CORAL.
 
-    Arquitectura sugerida:
-        (B, 15) -> Conv1DBackbone (ya entregado) -> (B, hidden_dim)
-                -> CoralLayer(hidden_dim, K)     -> (B, K-1)
+        (B, 15) -> Conv1DBackbone -> (B, hidden_dim)
+                -> CoralLayer(hidden_dim, K) -> (B, K-1)
 
-    El forward debe devolver logits de forma (batch_size, K-1).
-    No aplicar sigmoide en el forward: la perdida usa BCE con logits.
+    Devuelve logits: no se aplica sigmoide en el forward.
     """
 
     def __init__(
@@ -79,9 +75,7 @@ class Conv1DCoralNet(nn.Module):
             hidden_dim=hidden_dim,
             dropout=dropout,
         )
-        # TODO(alumno): crear la cabeza CORAL sobre self.backbone.output_dim.
+        self.head = CoralLayer(self.backbone.output_dim, num_classes)
 
     def forward(self, inputs: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError(
-            "TODO(alumno): implementar Conv1DCoralNet.forward() en src/models/coral.py."
-        )
+        return self.head(self.backbone(inputs))

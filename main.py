@@ -1,6 +1,6 @@
 """
 Punto de entrada del Laboratorio 02: Conv1D para clasificacion multiclase
-categorica (conv1d_softmax) y ordinal (conv1d_coral, TODO del alumno).
+categorica (conv1d_softmax) y ordinal (conv1d_coral).
 
 Ejemplo:
     python main.py --data-path "dataset/15 atributos R0-R5.sav" --epochs 5

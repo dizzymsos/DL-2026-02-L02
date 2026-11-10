@@ -2,7 +2,6 @@
 Tarea ordinal CORAL.
 
 La clase CoralTask ya conecta la perdida y la prediccion con el Trainer.
-Las cuatro funciones matematicas son TODO(alumno):
 
 1. labels_to_levels
 2. coral_loss
@@ -14,6 +13,7 @@ from __future__ import annotations
 
 import numpy as np
 import torch
+import torch.nn.functional as F
 
 from src.config import TrainingConfig
 from src.tasks.base import ClassificationTask, LossFunction
@@ -21,7 +21,6 @@ from src.tasks.base import ClassificationTask, LossFunction
 
 def labels_to_levels(labels: torch.Tensor, num_classes: int) -> torch.Tensor:
     """
-    TODO(alumno):
     Convierte clases enteras a umbrales binarios acumulativos.
 
     Ejemplo:
@@ -32,9 +31,8 @@ def labels_to_levels(labels: torch.Tensor, num_classes: int) -> torch.Tensor:
     - salida: (batch_size, num_classes - 1) float32
     """
 
-    raise NotImplementedError(
-        "TODO(alumno): implementar labels_to_levels() en src/tasks/ordinal_task.py."
-    )
+    thresholds = torch.arange(num_classes - 1, device=labels.device)
+    return (labels.unsqueeze(1) > thresholds).float()
 
 
 def coral_loss(
@@ -44,15 +42,8 @@ def coral_loss(
     class_weights: torch.Tensor | None = None,
 ) -> torch.Tensor:
     """
-    TODO(alumno):
-    BCE con logits sobre los K-1 umbrales ordinales.
 
-    Pistas:
-    - convertir labels con labels_to_levels,
-    - usar binary_cross_entropy_with_logits sin reduccion,
-    - sumar sobre los K-1 umbrales y promediar sobre el batch,
-    - si class_weights no es None, ponderar cada muestra por el peso
-      de su clase real.
+    BCE con logits sobre los K-1 umbrales ordinales.
 
     Formas:
     - logits: (batch_size, num_classes - 1)
@@ -61,9 +52,13 @@ def coral_loss(
     - salida: escalar
     """
 
-    raise NotImplementedError(
-        "TODO(alumno): implementar coral_loss() en src/tasks/ordinal_task.py."
-    )
+    levels = labels_to_levels(labels, num_classes)
+    per_threshold = F.binary_cross_entropy_with_logits(logits, levels, reduction="none")
+    per_sample = per_threshold.sum(dim=1)
+    if class_weights is not None:
+        per_sample = per_sample * class_weights[labels]
+
+    return per_sample.mean()
 
 
 def effective_number_weights(
@@ -71,8 +66,8 @@ def effective_number_weights(
     num_classes: int,
     beta: float = 0.99,
 ) -> torch.Tensor:
+    
     """
-    TODO(alumno):
     Pesos por numero efectivo de muestras (Cui et al., CVPR 2019):
 
         w_c = (1 - beta) / (1 - beta ** n_c)
@@ -85,9 +80,12 @@ def effective_number_weights(
     - salida: (num_classes,) float32
     """
 
-    raise NotImplementedError(
-        "TODO(alumno): implementar effective_number_weights() en src/tasks/ordinal_task.py."
-    )
+    counts = np.bincount(labels, minlength=num_classes).astype(np.float64)
+    present = counts > 0
+    weights = np.zeros(num_classes, dtype=np.float64)
+    weights[present] = (1.0 - beta) / (1.0 - beta ** counts[present])
+    weights[present] /= weights[present].mean()
+    return torch.as_tensor(weights, dtype=torch.float32)
 
 
 @torch.no_grad()
@@ -96,22 +94,16 @@ def logits_to_ordinal_predictions(
     threshold: float = 0.5,
 ) -> torch.Tensor:
     """
-    TODO(alumno):
     Convierte logits CORAL en una clase entera.
-
-    Pista:
-    aplicar sigmoide, contar cuantos umbrales superan threshold
-    y devolver ese conteo como y_hat.
+    aplica sigmoide, cuenta cuantos umbrales superan threshold
+    y devuelve ese conteo como y_hat.
 
     Formas:
     - logits: (batch_size, K-1)
     - salida: (batch_size,) int64
     """
 
-    raise NotImplementedError(
-        "TODO(alumno): implementar logits_to_ordinal_predictions() "
-        "en src/tasks/ordinal_task.py."
-    )
+    return (torch.sigmoid(logits) > threshold).sum(dim=1).long()
 
 
 class CoralLoss:
@@ -132,9 +124,6 @@ class CoralLoss:
 class CoralTask(ClassificationTask):
     """
     Clasificacion ordinal con K-1 umbrales acumulativos.
-
-    Ya entregado: la conexion con el Trainer y el calculo de pesos por fold.
-    TODO(alumno): las funciones de este modulo que lanzan NotImplementedError.
 
     Formas:
         logits: (B, K-1)

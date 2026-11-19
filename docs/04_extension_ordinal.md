@@ -1,4 +1,4 @@
-# 4. Extension ordinal (TODO del alumno)
+# 4. Extension ordinal (implementada) > Implementado en src/models/coral.py y src/tasks/ordinal_task.py. Los sesgos de CoralLayer usan BIAS_SCALE = 10 (ver README).
 
 El experimento `conv1d_coral` reutiliza todo lo entregado (datos, tronco
 Conv1D, `Trainer`, grid, validacion anidada, metricas y reportes). Solo faltan

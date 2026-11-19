@@ -110,7 +110,7 @@ python main.py --data-path "dataset/15 atributos R0-R5.sav" --all-targets
 python main.py --data-path "dataset/15 atributos R0-R5.sav" --all-targets \
   --rank-metric mae_ordinal --rank-mode min
 
-# 7. Experimento ordinal (requiere completar los TODO)
+# 7. Experimento ordinal
 python main.py --data-path "dataset/15 atributos R0-R5.sav" --algorithm conv1d_coral
 
 # 8. Ordinal con pesos por numero efectivo
@@ -120,10 +120,6 @@ python main.py --data-path "dataset/15 atributos R0-R5.sav" --algorithm conv1d_c
 # 9. Comparacion completa Softmax vs CORAL en los seis objetivos
 python main.py --data-path "dataset/15 atributos R0-R5.sav" --all-targets --algorithm all
 ```
-
-Mientras los esqueletos CORAL no esten completos, `conv1d_coral` se omite con
-un mensaje `NotImplementedError` que indica el archivo a completar; con
-`--algorithm all` los resultados de `conv1d_softmax` se reportan igual.
 
 ## Que se ve en consola
 

@@ -33,7 +33,7 @@ Flatten                (B, 480)       32 * 15
 MLPBlock               (B, 32)        Linear + ReLU + Dropout
 ----------------------------------------------------------------
 Cabeza Softmax         (B, K)         Linear(32, K)       -> CrossEntropyLoss
-Cabeza CORAL (TODO)    (B, K-1)       CoralLayer(32, K)   -> BCE en umbrales
+Cabeza CORAL   (B, K-1)       CoralLayer(32, K)   -> BCE en umbrales
 ```
 
 Parametros con la configuracion por defecto y K = 3:
@@ -79,11 +79,11 @@ main.py ──> ExperimentRunner ──> NestedCrossValidator ──> GridSearch
 | `src/data/dataset.py` | `CognitiveSequenceDataset` | Entregar `(1, 15)` float32 y etiqueta int64 |
 | `src/models/blocks.py` | `Conv1DBlock`, `Conv1DFeatureExtractor`, `MLPBlock`, `Conv1DBackbone` | Bloques reutilizables del tronco comun |
 | `src/models/conv_softmax.py` | `Conv1DSoftmaxNet` | Experimento 1 (K logits) |
-| `src/models/coral.py` | `CoralLayer`, `Conv1DCoralNet` | Experimento 2 (K-1 logits) — **TODO** |
+| `src/models/coral.py` | `CoralLayer`, `Conv1DCoralNet` | Experimento 2 (K-1 logits) |
 | `src/models/factory.py` | `ModelFactory` | Crear el modelo segun el algoritmo |
 | `src/tasks/base.py` | `ClassificationTask` | Interfaz: `build_criterion()` y `predict()` |
 | `src/tasks/softmax_task.py` | `SoftmaxTask` | `CrossEntropyLoss` + `argmax` |
-| `src/tasks/ordinal_task.py` | `CoralTask` + funciones ordinales | BCE en umbrales + conteo — **TODO** |
+| `src/tasks/ordinal_task.py` | `CoralTask` + funciones ordinales | BCE en umbrales + conteo |
 | `src/tasks/factory.py` | `TaskFactory` | Crear la tarea segun el algoritmo |
 | `src/training/trainer.py` | `Trainer` | Ciclo de entrenamiento, prediccion y evaluacion |
 | `src/training/search.py` | `GridSearch` | Busqueda interna (MAE, empate QWK) |

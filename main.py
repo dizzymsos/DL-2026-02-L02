@@ -49,8 +49,7 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=(
             "Laboratorio 02: Conv1D + MLP con validacion anidada y busqueda "
-            "de hiperparametros. conv1d_softmax esta implementado; "
-            "conv1d_coral queda como trabajo del alumno."
+            "de hiperparametros. Incluye conv1d_softmax y conv1d_coral."
         )
     )
 

@@ -79,7 +79,7 @@ columnas.
 
 - **Multiclase categorica (`conv1d_softmax`)**: K logits, `CrossEntropyLoss`,
   prediccion por `argmax`. Ignora el orden de las clases.
-- **Ordinal (`conv1d_coral`, TODO)**: K-1 logits acumulativos `P(Y > k)` con
+- **Ordinal (`conv1d_coral`)**: K-1 logits acumulativos `P(Y > k)` con
   umbrales ordenados, BCE sobre los umbrales y prediccion por conteo. Usa el
   orden de las clases.
 
